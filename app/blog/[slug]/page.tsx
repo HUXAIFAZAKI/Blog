@@ -66,3 +66,18 @@ export default async function page({params}:{params:{slug:string}}) {
 }
 
 export const revalidate = 10;
+
+export async function generateStaticParams() {
+  const query = `*[_type=='post']{
+    "slug":slug.current
+  }`;
+  const slugs = await client.fetch(query);
+  const slugRoutes = slugs.map((item:{slug:string})=>(
+    item.slug
+  ));
+  // console.log(slugRoutes)
+  return slugRoutes.map((slug:string)=>(
+    {slug}
+  ))
+  
+}
