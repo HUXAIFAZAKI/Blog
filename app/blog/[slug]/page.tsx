@@ -2,20 +2,31 @@ import { client } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
 import { PortableText } from "next-sanity";
 import Image from "next/image";
+import CommentForm from '@/components/CommentForm';
+import CommentList from '@/components/CommentList';
 
-export default async function page({params}:{params:{slug:string}}) {
+interface BlogPageProps {
+  params: {
+    slug: string;
+  };
+}
+
+export default async function Page({ params }: BlogPageProps) {
   const query = `*[_type=="post" && slug.current=="${params.slug}"]{
-      title,summary,image,content,
-        author->{
-          name,image,bio
-        }
-    }[0]`
+    title,
+    summary,
+    image,
+    content,
+    author->{
+      name,
+      image,
+      bio
+    }
+  }[0]`;
   const post = await client.fetch(query);
-  // console.log(post);
 
   return (
     <article className="mt-12 mb-24 px-2 2xl:px-12 flex flex-col gap-y-8">
-
       {/* Blog Title */}
       <h1 className="text-xl xs:text-3xl lg:text-5xl font-bold text-dark dark:text-light">
         {post.title}
@@ -27,17 +38,18 @@ export default async function page({params}:{params:{slug:string}}) {
         width={500}
         height={500}
         alt="Post Image"
-        className="rounded "
+        className="rounded"
+        priority
       />
 
       {/* Blog Summary Section */}
       <section>
-      <h2 className="text-xl xs:text-2xl md:text-3xl font-bold uppercase text-accentDarkPrimary">
-        Summary
-      </h2>
-      <p className="text-base md:text-xl leading-relaxed text-justify text-dark/80 dark:text-light/80">
-        {post.summary}
-      </p>
+        <h2 className="text-xl xs:text-2xl md:text-3xl font-bold uppercase text-accentDarkPrimary">
+          Summary
+        </h2>
+        <p className="text-base md:text-xl leading-relaxed text-justify text-dark/80 dark:text-light/80">
+          {post.summary}
+        </p>
       </section>
 
       {/* Author Section (Image & Bio) */}
@@ -59,7 +71,14 @@ export default async function page({params}:{params:{slug:string}}) {
 
       {/* Main Body of Blog */}
       <section className="text-lg leading-normal text-dark/80 dark:text-light/80">
-        <PortableText value={post.content}/>
+        <PortableText value={post.content} />
+      </section>
+
+      {/* Comment Section */}
+      <section className="mt-8">
+        <h2 className="text-2xl font-bold text-dark dark:text-light mb-4">Comments</h2>
+        <CommentList blogSlug={params.slug} />
+        <CommentForm blogSlug={params.slug} />
       </section>
     </article>
   );
@@ -69,15 +88,10 @@ export const revalidate = 10;
 
 export async function generateStaticParams() {
   const query = `*[_type=='post']{
-    "slug":slug.current
+    "slug": slug.current
   }`;
   const slugs = await client.fetch(query);
-  const slugRoutes = slugs.map((item:{slug:string})=>(
-    item.slug
-  ));
-  // console.log(slugRoutes)
-  return slugRoutes.map((slug:string)=>(
-    {slug}
-  ))
-  
+  return slugs.map((item: { slug: string }) => ({
+    slug: item.slug,
+  }));
 }
